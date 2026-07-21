@@ -1,55 +1,42 @@
 # Task Manager API
 
-A CRUD API built with FastAPI, backed by SQLite.
-
-## Why SQLite
-
-SQLite was chosen because it requires no separate installation or server setup —
-the entire database lives in a single file (`tasks.db`) that Python's built-in
-`sqlite3` module can read and write directly. This makes it ideal for local
-development: anyone who clones this repo can run the project immediately,
-with no database server to configure.
-
-## Where the database lives
-
-The database file `tasks.db` is created automatically in the project's root
-folder the first time the app runs. It is gitignored, since it's local data,
-not source code — anyone running the project gets a fresh file, auto-seeded
-with 3 example tasks.
+A CRUD API built with FastAPI, backed by PostgreSQL, running in Docker.
 
 ## Architecture
 
-Routes call a service layer, which calls a repository interface
-(`TaskRepository`). `SQLiteTaskRepository` is the current implementation —
-swapping storage later (e.g. to Postgres) only requires writing a new
-repository class and changing one line in `dependencies.py`. Routes and
-service logic do not change.
+routes.py -> service.py -> repository.py (interface) -> postgres_repository.py
 
-## How to run
+**Honest note:** switching storage from SQLite to Postgres only required
+writing `postgres_repository.py` and changing two lines in
+`app/dependencies.py` (which repository class gets instantiated).
+`routes.py`, `service.py`, and `models.py` were not touched.
+
+## Running it
 
 ```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+cp .env.example .env      # already done in this repo for convenience
+docker compose up --build
 ```
 
-Then visit `http://127.0.0.1:8000/docs` for interactive API docs.
-
-## Database viewer
-
-Data was inspected using [DB Browser for SQLite](https://sqlitebrowser.org/).
-
-![DB Browser screenshot](screenshot.png)
-
-Example query run directly against the database:
-
-```sql
-SELECT * FROM tasks;
-```
+This starts Postgres (with a named volume `pgdata`) and the FastAPI app
+together, in the correct order (app waits for Postgres to report healthy).
+API available at http://localhost:8000, docs at http://localhost:8000/docs.
 
 ## Proving persistence
 
-1. Created a task via `POST /tasks`
-2. Confirmed it via `GET /tasks`
-3. Restarted the server completely
-4. Ran `GET /tasks` again — the task was still present, confirming data
-   survives a restart (unlike the in-memory version from Assignment 1)
+1. `docker compose up --build`
+2. Created a task via `POST /tasks` (`{"title": "Survive a restart"}`)
+3. Confirmed it via `GET /tasks`
+4. Ran `docker compose down` (stops and removes both containers)
+5. Ran `docker compose up` again
+6. `GET /tasks` still showed the new task, along with the two seed tasks
+   from `sql/init.sql` (seed data does not duplicate, since the init
+   script only runs once, on first volume creation)
+
+This confirms data survives both an app restart and a full container
+restart, because Postgres's data directory lives in the named volume
+`pgdata`, not inside the container itself.
+
+## Environment variables
+
+See `.env.example`. `.env` is gitignored since it holds connection details.
