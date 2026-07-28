@@ -2,6 +2,8 @@ from fastapi import FastAPI
 
 from .routes import router
 
+from .auth_routes import router as auth_router
+
 app = FastAPI(
     title="Task Manager API",
     description="A simple CRUD API for managing tasks",
@@ -9,6 +11,8 @@ app = FastAPI(
 )
 
 app.include_router(router)
+
+app.include_router(auth_router)
 
 
 @app.get("/", description="Welcome message for the API")
@@ -19,3 +23,4 @@ def home():
 @app.get("/health", description="Check if the API is running")
 def health_check():
     return {"status": "ok"}
+
