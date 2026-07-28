@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi import Header
 from pydantic import BaseModel
 
 from .supabase_client import supabase
@@ -34,3 +35,19 @@ def login(data: AuthRequest):
         raise HTTPException(status_code=401, detail=str(e))
 
     return {"access_token": result.session.access_token}
+
+@router.get("/public/info")
+def public_info():
+    return {"message": "Welcome stranger! This info is public."}
+
+@router.get("/protected/profile")
+def profile(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Access token required")
+
+    token = authorization.split("Bearer ")[1]
+    if not token:
+        raise HTTPException(status_code=401, detail="Access token required")
+
+    return {"message": "token looks structurally valid, not yet verified"}
+
