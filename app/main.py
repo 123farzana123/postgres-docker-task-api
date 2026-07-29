@@ -7,7 +7,7 @@ from .auth_routes import router as auth_router
 
 app = FastAPI(
     title="Task Manager API",
-    description="A simple CRUD API for managing tasks",
+    description="A CRUD API for managing tasks, with Supabase-backed authentication",
     version="1.0.0",
 )
 
